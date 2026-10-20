@@ -1,0 +1,57 @@
+@model CaioFinance.Models.LancamentoFuturo
+@{
+    var jaContaFixa = Model.nCdTipo == TipoLancamentoFuturo.ContaFixa && Model.nCdSerie is not null;
+    var veioDoCartao = Model.nCdTipo == TipoLancamentoFuturo.Cartao;
+}
+<li class="card statement-row">
+    <div class="statement-main">
+        <div class="card-top">
+            <span class="day">@Model.tDtVencimento.ToString("dd/MM/yyyy")</span>
+            <strong class="money @(Model.dVlLancamento < 0 ? "neg" : "pos")">@Model.dVlLancamento.ToString("C")</strong>
+        </div>
+        <h3>@Model.sNmLancamento</h3>
+        <p class="meta">
+            <span>@Model.Conta.NomeExibicao</span>
+            <span>@Model.Categoria.sNmCategoria</span>
+            @if (jaContaFixa)
+            {
+                <span class="badge">@Textos.ContaFixa</span>
+            }
+            else if (veioDoCartao)
+            {
+                <span class="badge">@Textos.Cartao</span>
+            }
+            else
+            {
+                <span class="badge quiet">@Textos.Avulso</span>
+            }
+        </p>
+    </div>
+    <div class="icon-actions">
+        @if (!jaContaFixa && !veioDoCartao)
+        {
+            <button type="button" class="icon-button" data-fixar
+                    data-id="@Model.nCdLancamentoFuturo"
+                    data-nome="@Model.sNmLancamento"
+                    data-valor="@Math.Abs(Model.dVlLancamento).ToString("N2")"
+                    aria-label="@Textos.MarcarContaFixa"
+                    title="@Textos.MarcarContaFixa">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3H8v2h1v9l3-2 3 2V5h1V3z"/></svg>
+            </button>
+        }
+        <button type="button" class="icon-button" data-editar
+                data-id="@Model.nCdLancamentoFuturo"
+                data-data="@Model.tDtVencimento.ToString("yyyy-MM-dd")"
+                data-nome="@Model.sNmLancamento"
+                data-tipo="@(Model.dVlLancamento < 0 ? "gasto" : "entrada")"
+                data-valor="@Math.Abs(Model.dVlLancamento).ToString("N2")"
+                data-conta="@Model.nCdConta"
+                data-categoria="@Model.nCdCategoria"
+                aria-label="@Textos.Editar" title="@Textos.Editar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25zm16.7-11.2a.75.75 0 0 0 0-1.06l-2.69-2.69a.75.75 0 0 0-1.06 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+        <button type="button" class="icon-button danger" data-excluir data-id="@Model.nCdLancamentoFuturo" data-nome="@Model.sNmLancamento" aria-label="@Textos.Excluir" title="@Textos.Excluir">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12v2H6V7zm2 3h8l-.7 10.1a1 1 0 0 1-1 .9H9.7a1 1 0 0 1-1-.9L8 10zm3-6h2l1 1h4v2H6V5h4l1-1z"/></svg>
+        </button>
+    </div>
+</li>

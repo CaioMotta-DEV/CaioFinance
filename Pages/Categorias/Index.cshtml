@@ -1,0 +1,101 @@
+@page "/categorias"
+@model CaioFinance.Pages.Categorias.IndexModel
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+<section class="page-head">
+    <p class="eyebrow">Organização</p>
+    <div class="month-nav">
+        <a class="icon-link" asp-page="/Categorias/Index" asp-route-ano="@Model.MesAnterior.Year" asp-route-mes="@Model.MesAnterior.Month" aria-label="Mês anterior">‹</a>
+        <h1>@Model.TituloDoMes</h1>
+        <a class="icon-link" asp-page="/Categorias/Index" asp-route-ano="@Model.ProximoMes.Year" asp-route-mes="@Model.ProximoMes.Month" aria-label="Próximo mês">›</a>
+    </div>
+</section>
+
+<div class="split">
+    <section class="panel" aria-labelledby="categorias-titulo">
+        <div class="panel-head">
+            <h2 id="categorias-titulo">Categorias</h2>
+            <span>Totais do mês</span>
+        </div>
+        @if (Model.Linhas.Count == 0)
+        {
+            <p class="empty">Nenhuma categoria cadastrada.</p>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var item in Model.Linhas)
+                {
+                    <li class="card category-row">
+                        <div class="category-main">
+                            <div>
+                                <h3>@item.sNmCategoria</h3>
+                                <p class="meta">
+                                    <span class="neg">Gastos @item.dVlGastos.ToString("C")</span>
+                                    <span class="pos">Entradas @item.dVlEntradas.ToString("C")</span>
+                                </p>
+                            </div>
+                            <div class="icon-actions">
+                                <a class="icon-button"
+                                   asp-page="/Categorias/Index"
+                                   asp-route-ano="@Model.Ano"
+                                   asp-route-mes="@Model.Mes"
+                                   asp-route-editar="@item.nCdCategoria"
+                                   aria-label="@Textos.Editar @item.sNmCategoria"
+                                   title="@Textos.Editar">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25zm16.7-11.2a.75.75 0 0 0 0-1.06l-2.69-2.69a.75.75 0 0 0-1.06 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                </a>
+                                @if (!item.bFlOutros)
+                                {
+                                    <form method="post" asp-page-handler="Excluir" class="icon-form">
+                                        <input type="hidden" name="nCdCategoria" value="@item.nCdCategoria" />
+                                        <input type="hidden" name="ano" value="@Model.Ano" />
+                                        <input type="hidden" name="mes" value="@Model.Mes" />
+                                        <button type="submit" class="icon-button danger" aria-label="@Textos.Excluir @item.sNmCategoria" title="@Textos.Excluir">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12v2H6V7zm2 3h8l-.7 10.1a1 1 0 0 1-1 .9H9.7a1 1 0 0 1-1-.9L8 10zm3-6h2l1 1h4v2H6V5h4l1-1z"/></svg>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="panel composer" aria-labelledby="form-categoria">
+        @if (Model.nCdEdicao is int codigo)
+        {
+            <h2 id="form-categoria">Editar categoria</h2>
+            <form method="post" asp-page-handler="Salvar">
+                <input type="hidden" name="nCdCategoria" value="@codigo" />
+                <input type="hidden" name="ano" value="@Model.Ano" />
+                <input type="hidden" name="mes" value="@Model.Mes" />
+                <label>
+                    <span>Nome</span>
+                    <input name="nome" value="@Model.NomeEdicao" maxlength="40" required autocomplete="off" />
+                </label>
+                <div class="form-actions">
+                    <button type="submit">@Textos.Salvar</button>
+                    <a class="ghost-link" asp-page="/Categorias/Index" asp-route-ano="@Model.Ano" asp-route-mes="@Model.Mes">Cancelar</a>
+                </div>
+            </form>
+        }
+        else
+        {
+            <h2 id="form-categoria">Nova categoria</h2>
+            <form method="post" asp-page-handler="Incluir">
+                <input type="hidden" name="ano" value="@Model.Ano" />
+                <input type="hidden" name="mes" value="@Model.Mes" />
+                <label>
+                    <span>Nome</span>
+                    <input name="nome" maxlength="40" required placeholder="Ex.: Educação" autocomplete="off" />
+                </label>
+                <button type="submit">@Textos.Incluir</button>
+            </form>
+        }
+    </section>
+</div>

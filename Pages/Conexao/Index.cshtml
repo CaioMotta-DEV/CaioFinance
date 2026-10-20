@@ -1,0 +1,112 @@
+@page "/conexao"
+@model CaioFinance.Pages.Conexao.IndexModel
+@{
+    ViewData["Title"] = "Conexão";
+}
+
+<section class="page-head">
+    <p class="eyebrow">Bancos</p>
+    <h1>Conexão</h1>
+    <p class="lede">Conecte pelo Meu Pluggy. A primeira leitura traz 12 meses. Depois, Atualizar busca só o que a Pluggy registrou a partir da última data e hora. O Meu Pluggy não aceita sincronismo forçado com o banco.</p>
+</section>
+
+<div class="toolbar">
+    <form method="post" asp-page-handler="AtualizarTudo" data-atualizar-tudo>
+        <button type="submit">Atualizar tudo</button>
+    </form>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.AvisoPluggy))
+{
+    <p class="banner err" role="alert">@Model.AvisoPluggy</p>
+}
+
+<section class="card connect-card">
+    <h2>Conectar banco</h2>
+    <p class="original">A Pluggy atualiza o Meu Pluggy sozinha, em geral a cada 24 horas. Atualizar traz o saldo e o extrato que já estiverem lá.</p>
+    <form id="form-conexao" method="post">
+        @Html.AntiForgeryToken()
+        <label>
+            <span>Banco</span>
+            <select data-banco required @(Model.PluggyConfigurada ? null : "disabled")>
+                <option value="">Escolha o banco</option>
+            </select>
+        </label>
+        <button type="button" data-conectar @(Model.PluggyConfigurada ? null : "disabled")>Conectar</button>
+    </form>
+    <script id="bancos-json" type="application/json">@Html.Raw(Model.BancosJson)</script>
+</section>
+
+<ul class="list">
+    @foreach (var conta in Model.Contas)
+    {
+        var ligada = !string.IsNullOrWhiteSpace(conta.sIdItemPluggy);
+        <li class="card bank">
+            <div class="card-top">
+                <h2>@conta.NomeExibicao</h2>
+                <strong class="money">@conta.dVlSaldo.ToString("C")</strong>
+            </div>
+            <p class="meta">
+                <span class="badge">@(ligada ? IndexModel.Situacao(conta.nCdSituacao) : "Exemplo")</span>
+            </p>
+            <p class="original">Última atualização: <time>@IndexModel.Atualizacao(conta.tDtAtualizacao)</time></p>
+            @if (!ligada)
+            {
+                <p class="original">Conta de exemplo, sem Open Finance.</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(conta.sNmApelido))
+            {
+                <p class="original">Nome no banco: @conta.sNmInstituicao</p>
+            }
+            <div class="actions">
+                <button type="button" class="icon-button" data-apelido data-id="@conta.nCdConta" data-apelido-valor="@conta.sNmApelido" data-nome="@conta.sNmInstituicao" aria-label="@Textos.Editar" title="@Textos.Editar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25zm16.7-11.2a.75.75 0 0 0 0-1.06l-2.69-2.69a.75.75 0 0 0-1.06 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                @if (ligada)
+                {
+                    <form method="post" asp-page-handler="Atualizar" data-atualizar>
+                        <input type="hidden" name="nCdConta" value="@conta.nCdConta" />
+                        <button type="submit">@Textos.Atualizar</button>
+                    </form>
+                    <button type="button" class="secondary" data-reconectar data-item="@conta.sIdItemPluggy">Reconectar</button>
+                }
+                <form method="post" asp-page-handler="Excluir" class="icon-form" onsubmit="return confirm('Excluir esta conexão e os extratos importados?');">
+                    <input type="hidden" name="nCdConta" value="@conta.nCdConta" />
+                    <button type="submit" class="icon-button danger" aria-label="Excluir @conta.sNmInstituicao" title="@Textos.Excluir">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12v2H6V7zm2 3h8l-.7 10.1a1 1 0 0 1-1 .9H9.7a1 1 0 0 1-1-.9L8 10zm3-6h2l1 1h4v2H6V5h4l1-1z"/></svg>
+                    </button>
+                </form>
+            </div>
+        </li>
+    }
+</ul>
+
+<div class="overlay" data-carregando hidden aria-hidden="true">
+    <div class="overlay-card" role="status" aria-live="polite">
+        <div class="spinner" data-spinner></div>
+        <p data-carregando-texto>Conectando ao banco…</p>
+        <button type="button" data-fechar-carregando hidden>Fechar</button>
+    </div>
+</div>
+
+<dialog id="janela-apelido" class="janela">
+    <form method="post" asp-page-handler="Apelido">
+        <h2>Apelido do banco</h2>
+        <input type="hidden" name="nCdConta" />
+        <p class="original">Nome no banco: <span data-nome-banco></span></p>
+        <label>
+            <span>Apelido</span>
+            <input name="apelido" maxlength="80" autocomplete="off" />
+        </label>
+        <p class="original">Este nome aparece no lugar do banco em todo o sistema. Deixe vazio para voltar ao nome original.</p>
+        <div class="form-actions">
+            <button type="submit">@Textos.Salvar</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script src="https://cdn.pluggy.ai/pluggy-connect/latest/pluggy-connect.js"></script>
+    <script src="~/js/conexao.js" asp-append-version="true"></script>
+}

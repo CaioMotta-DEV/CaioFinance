@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Caio Finance</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var pagina = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+        bool Ativa(string caminho) => pagina.Equals(caminho, StringComparison.OrdinalIgnoreCase);
+    }
+    <div class="app">
+        <div class="backdrop" data-backdrop hidden></div>
+        <aside id="sidebar" class="sidebar" data-sidebar>
+            <div class="brand">
+                <strong>Caio Finance</strong>
+                <span>Controle pessoal</span>
+            </div>
+            <nav class="nav" aria-label="Principal">
+                <a class="@(Ativa("/Dashboard/Index") ? "is-active" : null)" asp-page="/Dashboard/Index" aria-current="@(Ativa("/Dashboard/Index") ? "page" : null)">Dashboard</a>
+                <a class="@(Ativa("/Cartoes/Index") ? "is-active" : null)" asp-page="/Cartoes/Index" aria-current="@(Ativa("/Cartoes/Index") ? "page" : null)">Cartões</a>
+                <a class="@(Ativa("/LancamentosFuturos/Index") ? "is-active" : null)" asp-page="/LancamentosFuturos/Index" aria-current="@(Ativa("/LancamentosFuturos/Index") ? "page" : null)">Lançamentos futuros</a>
+                <a class="@(Ativa("/Categorias/Index") ? "is-active" : null)" asp-page="/Categorias/Index" aria-current="@(Ativa("/Categorias/Index") ? "page" : null)">Categorias</a>
+                <a class="@(Ativa("/Conexao/Index") ? "is-active" : null)" asp-page="/Conexao/Index" aria-current="@(Ativa("/Conexao/Index") ? "page" : null)">Conexão</a>
+            </nav>
+        </aside>
+        <div class="content">
+            <header class="topbar">
+                <button type="button" class="menu-button" data-menu-button aria-expanded="false" aria-controls="sidebar">
+                    <span class="menu-glyph" aria-hidden="true"></span>
+                    Menu
+                </button>
+                <span class="topbar-title">Caio Finance</span>
+            </header>
+            @if (TempData["Ok"] is string ok)
+            {
+                <p class="banner ok" role="status">@ok</p>
+            }
+            @if (TempData["Erro"] is string erro)
+            {
+                <p class="banner err" role="alert">@erro</p>
+            }
+            <main>
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

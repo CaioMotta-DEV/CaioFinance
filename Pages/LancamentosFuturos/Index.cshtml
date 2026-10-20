@@ -1,0 +1,273 @@
+@page "/lancamentos-futuros"
+@model CaioFinance.Pages.LancamentosFuturos.IndexModel
+@{
+    ViewData["Title"] = "Lançamentos futuros";
+}
+
+<section class="page-head">
+    <p class="eyebrow">Previsão</p>
+    <div class="month-nav">
+        <a class="icon-link" asp-page="/LancamentosFuturos/Index" asp-route-ano="@Model.MesAnterior.Year" asp-route-mes="@Model.MesAnterior.Month" aria-label="Mês anterior">‹</a>
+        <h1>@Model.TituloDoMes</h1>
+        <a class="icon-link" asp-page="/LancamentosFuturos/Index" asp-route-ano="@Model.ProximoMes.Year" asp-route-mes="@Model.ProximoMes.Month" aria-label="Próximo mês">›</a>
+    </div>
+</section>
+
+<section class="metrics metrics-tres" aria-label="Resumo do mês">
+    <article class="metric">
+        <span>Gasto real</span>
+        <strong class="@(Model.GastoReal > 0 ? "neg" : Model.GastoReal < 0 ? "pos" : null)">@Model.GastoReal.ToString("C")</strong>
+    </article>
+    <article class="metric">
+        <span>Despesas</span>
+        <strong class="neg">@Model.TotalDespesas.ToString("C")</strong>
+    </article>
+    <article class="metric">
+        <span>Receitas</span>
+        <strong class="pos">@Model.TotalReceitas.ToString("C")</strong>
+    </article>
+</section>
+
+<div class="toolbar">
+    <button type="button" data-abrir="janela-incluir">Incluir lançamento futuro</button>
+    <form method="post" asp-page-handler="Atualizar">
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <button type="submit">@Textos.Atualizar</button>
+    </form>
+</div>
+
+<div class="split futuros-split">
+    <section class="panel" aria-labelledby="despesas-titulo">
+        <div class="panel-head">
+            <h2 id="despesas-titulo">@Textos.Despesas</h2>
+            <span>@Model.Despesas.Count</span>
+        </div>
+        @if (Model.Despesas.Count == 0)
+        {
+            <p class="empty">Nenhuma despesa neste mês.</p>
+        }
+        else
+        {
+            <ul class="list futuros-lista">
+                @foreach (var item in Model.Despesas)
+                {
+                    <partial name="_ItemFuturo" model="item" />
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="panel" aria-labelledby="receitas-titulo">
+        <div class="panel-head">
+            <h2 id="receitas-titulo">@Textos.Receitas</h2>
+            <span>@Model.Receitas.Count</span>
+        </div>
+        @if (Model.Receitas.Count == 0)
+        {
+            <p class="empty">Nenhuma receita neste mês.</p>
+        }
+        else
+        {
+            <ul class="list futuros-lista">
+                @foreach (var item in Model.Receitas)
+                {
+                    <partial name="_ItemFuturo" model="item" />
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+<dialog id="janela-incluir" class="janela">
+    <form method="post" asp-page-handler="Incluir">
+        <h2>Incluir lançamento futuro</h2>
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <label><span>Data</span><input type="date" name="data" value="@Model.DataSugerida.ToString("yyyy-MM-dd")" required /></label>
+        <label><span>Nome</span><input name="nome" maxlength="160" required autocomplete="off" /></label>
+        <label>
+            <span>Tipo</span>
+            <select name="tipo">
+                <option value="gasto">@Textos.Gasto</option>
+                <option value="entrada">@Textos.Entrada</option>
+            </select>
+        </label>
+        <label><span>Valor</span><input name="valor" inputmode="decimal" required autocomplete="off" /></label>
+        <label>
+            <span>Conta</span>
+            <select name="nCdConta">
+                @foreach (var conta in Model.Contas)
+                {
+                    <option value="@conta.nCdConta">@conta.NomeExibicao</option>
+                }
+            </select>
+        </label>
+        <label>
+            <span>Categoria</span>
+            <select name="nCdCategoria">
+                @foreach (var categoria in Model.Categorias)
+                {
+                    <option value="@categoria.nCdCategoria">@categoria.sNmCategoria</option>
+                }
+            </select>
+        </label>
+        <label>
+            <span>Repetir por quantos meses</span>
+            <input name="meses" type="number" min="1" max="60" value="1" required />
+        </label>
+        <p class="original">1 lança só esta data. Mais de 1 repete nos meses seguintes.</p>
+        <div class="form-actions">
+            <button type="submit">@Textos.Incluir</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-editar" class="janela">
+    <form method="post" asp-page-handler="Salvar">
+        <h2>Editar lançamento futuro</h2>
+        <input type="hidden" name="nCdLancamentoFuturo" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <label><span>Data</span><input type="date" name="data" required /></label>
+        <label><span>Nome</span><input name="nome" maxlength="160" required autocomplete="off" /></label>
+        <label>
+            <span>Tipo</span>
+            <select name="tipo">
+                <option value="gasto">@Textos.Gasto</option>
+                <option value="entrada">@Textos.Entrada</option>
+            </select>
+        </label>
+        <label><span>Valor</span><input name="valor" inputmode="decimal" required autocomplete="off" /></label>
+        <label>
+            <span>Conta</span>
+            <select name="nCdConta">
+                @foreach (var conta in Model.Contas)
+                {
+                    <option value="@conta.nCdConta">@conta.NomeExibicao</option>
+                }
+            </select>
+        </label>
+        <label>
+            <span>Categoria</span>
+            <select name="nCdCategoria">
+                @foreach (var categoria in Model.Categorias)
+                {
+                    <option value="@categoria.nCdCategoria">@categoria.sNmCategoria</option>
+                }
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit">@Textos.Salvar</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-fixar" class="janela">
+    <form method="post" asp-page-handler="MarcarContaFixa">
+        <h2>@Textos.MarcarContaFixa</h2>
+        <input type="hidden" name="nCdLancamentoFuturo" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p class="original">O apelido e o valor estimado geram a série nos lançamentos futuros.</p>
+        <label>
+            <span>Apelido</span>
+            <input name="apelido" maxlength="160" required autocomplete="off" />
+        </label>
+        <label>
+            <span>Valor estimado</span>
+            <input name="valorEstimado" inputmode="decimal" required autocomplete="off" />
+        </label>
+        <label>
+            <span>Quantidade de meses</span>
+            <input name="meses" type="number" min="1" max="60" value="24" required />
+        </label>
+        <label>
+            <span>Começar em</span>
+            <select name="inicio">
+                <option value="este" selected>Este mês</option>
+                <option value="proximo">Próximo mês</option>
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit">@Textos.Salvar</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-excluir" class="janela">
+    <form method="post" asp-page-handler="Remover">
+        <h2>Excluir lançamento</h2>
+        <input type="hidden" name="nCdLancamentoFuturo" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p>Excluir <strong data-nome></strong> deste mês?</p>
+        <p class="original">Excluir tudo remove este lançamento em todos os meses restantes da série.</p>
+        <div class="form-actions">
+            <button type="submit" class="danger" name="escopo" value="um">@Textos.Excluir</button>
+            <button type="submit" class="danger" name="escopo" value="tudo">@Textos.ExcluirTudo</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script>
+        (() => {
+            const preencher = (formulario, campos) => {
+                Object.entries(campos).forEach(([nome, valor]) => {
+                    const campo = formulario.elements.namedItem(nome);
+                    if (campo) campo.value = valor ?? "";
+                });
+            };
+            document.querySelectorAll("dialog.janela").forEach((janela) => {
+                janela.addEventListener("cancel", (evento) => evento.preventDefault());
+                janela.querySelectorAll("[data-fechar]").forEach((botao) => {
+                    botao.addEventListener("click", () => janela.close());
+                });
+            });
+            document.querySelector("[data-abrir]")?.addEventListener("click", (evento) => {
+                document.getElementById(evento.currentTarget.dataset.abrir)?.showModal();
+            });
+            const editar = document.getElementById("janela-editar");
+            document.querySelectorAll("[data-editar]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(editar.querySelector("form"), {
+                        nCdLancamentoFuturo: botao.dataset.id,
+                        data: botao.dataset.data,
+                        nome: botao.dataset.nome,
+                        tipo: botao.dataset.tipo,
+                        valor: botao.dataset.valor,
+                        nCdConta: botao.dataset.conta,
+                        nCdCategoria: botao.dataset.categoria
+                    });
+                    editar.showModal();
+                });
+            });
+            const janelaFixar = document.getElementById("janela-fixar");
+            document.querySelectorAll("[data-fixar]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(janelaFixar.querySelector("form"), {
+                        nCdLancamentoFuturo: botao.dataset.id,
+                        apelido: botao.dataset.nome,
+                        valorEstimado: botao.dataset.valor,
+                        meses: "24",
+                        inicio: "este"
+                    });
+                    janelaFixar.showModal();
+                });
+            });
+            const excluir = document.getElementById("janela-excluir");
+            document.querySelectorAll("[data-excluir]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(excluir.querySelector("form"), { nCdLancamentoFuturo: botao.dataset.id });
+                    excluir.querySelector("[data-nome]").textContent = botao.dataset.nome || "";
+                    excluir.showModal();
+                });
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,15 @@
+﻿@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Erro";
+}
+
+<section class="page-head">
+    <h1>Não foi possível concluir.</h1>
+    <p class="lede">Tente de novo. Se o problema continuar, vale olhar o log da aplicação.</p>
+</section>
+
+@if (Model.ShowRequestId)
+{
+    <p class="original">Código: <code>@Model.RequestId</code></p>
+}

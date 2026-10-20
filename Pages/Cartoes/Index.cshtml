@@ -1,0 +1,443 @@
+@page "/cartoes"
+@model CaioFinance.Pages.Cartoes.IndexModel
+@{
+    ViewData["Title"] = "Cartões";
+    var aberto = Model.CartaoAberto is int codigo
+        ? Model.Cartoes.FirstOrDefault(item => item.Cartao.nCdCartao == codigo)
+        : null;
+}
+
+<section class="page-head">
+    <p class="eyebrow">Carteira</p>
+    <div class="month-nav">
+        <a class="icon-link" asp-page="/Cartoes/Index" asp-route-ano="@Model.MesAnterior.Year" asp-route-mes="@Model.MesAnterior.Month" asp-route-nCdCartao="@Model.CartaoAberto" aria-label="Mês anterior">‹</a>
+        <h1>@Model.TituloDoMes</h1>
+        <a class="icon-link" asp-page="/Cartoes/Index" asp-route-ano="@Model.ProximoMes.Year" asp-route-mes="@Model.ProximoMes.Month" asp-route-nCdCartao="@Model.CartaoAberto" aria-label="Próximo mês">›</a>
+    </div>
+    <p class="lede">O mês é o da fatura seguinte ao fechamento. Compras feitas depois que a fatura fechou entram no mês seguinte.</p>
+</section>
+
+<div class="toolbar">
+    <button type="button" data-abrir="janela-cartao">Incluir cartão</button>
+    <form method="post" asp-page-handler="Atualizar">
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <input type="hidden" name="nCdCartao" value="@Model.CartaoAberto" />
+        <button type="submit" class="secondary">@Textos.Atualizar</button>
+    </form>
+</div>
+
+@if (Model.Cartoes.Count == 0)
+{
+    <p class="empty">Nenhum cartão. Inclua um ou atualize as conexões do Meu Pluggy.</p>
+}
+else
+{
+    <div class="wallet" aria-label="Carteira de cartões">
+            @foreach (var item in Model.Cartoes)
+            {
+                var selecionado = Model.CartaoAberto == item.Cartao.nCdCartao;
+                <article class="wallet-card @(selecionado ? "is-open" : null)" style="--card-face: @item.Cartao.sDsCor">
+                    <a class="wallet-main"
+                       asp-page="/Cartoes/Index"
+                       asp-route-ano="@Model.Ano"
+                       asp-route-mes="@Model.Mes"
+                       asp-route-nCdCartao="@(selecionado ? null : item.Cartao.nCdCartao)"
+                       aria-current="@(selecionado ? "true" : null)">
+                        <span class="wallet-top">
+                            <strong>@item.Cartao.NomeExibicao</strong>
+                            @if (!string.IsNullOrWhiteSpace(item.Cartao.sNrFinal))
+                            {
+                                <span class="wallet-digits">•••• @item.Cartao.sNrFinal</span>
+                            }
+                        </span>
+                        <span class="wallet-bottom">
+                            <span>
+                                <span class="wallet-name">@item.Cartao.sNmInstituicao</span>
+                                <span class="wallet-digits">@item.Cartao.sNmBandeira</span>
+                            </span>
+                            <strong>@item.Total.ToString("C")</strong>
+                        </span>
+                    </a>
+                    <div class="wallet-actions">
+                        <button type="button" class="icon-button light" data-gasto data-id="@item.Cartao.nCdCartao" aria-label="Adicionar gasto" title="Adicionar">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
+                        </button>
+                        <button type="button" class="icon-button light" data-editar-cartao data-id="@item.Cartao.nCdCartao" data-apelido="@item.Cartao.sNmApelido" data-nome="@item.Cartao.sNmCartao" aria-label="@Textos.Editar" title="@Textos.Editar">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25zm16.7-11.2a.75.75 0 0 0 0-1.06l-2.69-2.69a.75.75 0 0 0-1.06 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                        <button type="button" class="icon-button light" data-excluir-cartao data-id="@item.Cartao.nCdCartao" data-nome="@item.Cartao.NomeExibicao" aria-label="@Textos.Excluir" title="@Textos.Excluir">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12v2H6V7zm2 3h8l-.7 10.1a1 1 0 0 1-1 .9H9.7a1 1 0 0 1-1-.9L8 10zm3-6h2l1 1h4v2H6V5h4l1-1z"/></svg>
+                        </button>
+                    </div>
+                </article>
+            }
+    </div>
+
+        <section class="panel wallet-detail" aria-labelledby="gastos-cartao">
+            @if (aberto is null)
+            {
+                <p class="empty">Selecione um cartão para ver a fatura.</p>
+            }
+            else
+            {
+                <div class="panel-head">
+                    <h2 id="gastos-cartao">@aberto.Cartao.NomeExibicao</h2>
+                    <span>@Model.TotalDoCartao.ToString("C")</span>
+                </div>
+                @if (Model.Gastos.Count == 0)
+                {
+                    <p class="empty">Nenhum gasto nesta fatura.</p>
+                }
+                else
+                {
+                    <ul class="list gasto-lista">
+                        @foreach (var gasto in Model.Gastos)
+                        {
+                            <li class="card statement-row">
+                                <div class="statement-main">
+                                    <div class="card-top">
+                                        <time datetime="@gasto.tDtCompra.ToString("yyyy-MM-dd")">Compra @gasto.tDtCompra.ToString("dd/MM/yyyy")</time>
+                                        <strong class="money neg">@gasto.dVlGasto.ToString("C")</strong>
+                                    </div>
+                                    <h3 title="@gasto.NomeExibicao">@gasto.NomeExibicao</h3>
+                                    <p class="meta">
+                                        <span>@gasto.sNmCategoria</span>
+                                        <span>@IndexModel.Parcela(gasto)</span>
+                                        <span>Fatura @gasto.tDtFatura.ToString("dd/MM/yyyy")</span>
+                                        @if (gasto.bFlContaFixa)
+                                        {
+                                            <span class="badge">@Textos.ContaFixa</span>
+                                        }
+                                    </p>
+                                </div>
+                                <div class="icon-actions">
+                                    <button type="button" class="icon-button" data-editar-gasto
+                                            data-id="@gasto.nCdGasto"
+                                            data-compra="@gasto.tDtCompra.ToString("yyyy-MM-dd")"
+                                            data-fatura="@gasto.tDtFatura.ToString("yyyy-MM-dd")"
+                                            data-apelido="@gasto.sNmApelido"
+                                            data-descricao="@gasto.sNmDescricao"
+                                            data-categoria="@gasto.sNmCategoria"
+                                            data-valor="@gasto.dVlGasto.ToString("N2")"
+                                            data-parcela="@gasto.nNrParcela"
+                                            data-total="@gasto.nNrTotalParcelas"
+                                            aria-label="@Textos.Editar" title="@Textos.Editar">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.25V20h2.75L17.8 8.95l-2.75-2.75L4 17.25zm16.7-11.2a.75.75 0 0 0 0-1.06l-2.69-2.69a.75.75 0 0 0-1.06 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </button>
+                                    <button type="button" class="icon-button danger" data-excluir-gasto data-id="@gasto.nCdGasto" data-nome="@gasto.NomeExibicao" data-fixa="@(gasto.bFlContaFixa ? "true" : "false")" aria-label="@Textos.Excluir" title="@Textos.Excluir">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12v2H6V7zm2 3h8l-.7 10.1a1 1 0 0 1-1 .9H9.7a1 1 0 0 1-1-.9L8 10zm3-6h2l1 1h4v2H6V5h4l1-1z"/></svg>
+                                    </button>
+                                    @if (gasto.bFlContaFixa)
+                                    {
+                                        <button type="button" class="icon-button is-fixed" data-desmarcar data-id="@gasto.nCdGasto" data-nome="@gasto.NomeExibicao" aria-label="@Textos.DesmarcarContaFixa" title="@Textos.DesmarcarContaFixa">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 2H8v2H7v2h.2L6 12v2h5v7h2v-7h5v-2l-1.2-6H17V4h-1V2z"/><path d="M3.3 2.3 21.7 20.7l-1.4 1.4L1.9 3.7z"/></svg>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="icon-button" data-fixar data-id="@gasto.nCdGasto" data-nome="@gasto.NomeExibicao" data-valor="@gasto.dVlGasto.ToString("N2")" aria-label="@Textos.MarcarContaFixa" title="@Textos.MarcarContaFixa">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 2H8v2H7v2h.2L6 12v2h5v7h2v-7h5v-2l-1.2-6H17V4h-1V2z"/></svg>
+                                        </button>
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+        </section>
+}
+
+<dialog id="janela-cartao" class="janela">
+    <form method="post" asp-page-handler="IncluirCartao">
+        <h2>Incluir cartão</h2>
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <label><span>Instituição</span><input name="instituicao" maxlength="80" required autocomplete="off" /></label>
+        <label><span>Nome</span><input name="nome" maxlength="80" required autocomplete="off" /></label>
+        <label><span>Bandeira</span><input name="bandeira" maxlength="40" autocomplete="off" /></label>
+        <label><span>Final</span><input name="final" maxlength="4" inputmode="numeric" autocomplete="off" /></label>
+        <label><span>Dia de vencimento</span><input name="diaVencimento" type="number" min="1" max="31" /></label>
+        <label>
+            <span>Cor</span>
+            <select name="cor">
+                <option value="#0F766E">Verde</option>
+                <option value="#820AD1">Roxo</option>
+                <option value="#EC7000">Laranja</option>
+                <option value="#242424">Preto</option>
+                <option value="#009EE3">Azul</option>
+                <option value="#1A1F71">Azul escuro</option>
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit">@Textos.Incluir</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-editar-cartao" class="janela">
+    <form method="post" asp-page-handler="SalvarCartao">
+        <h2>Editar cartão</h2>
+        <input type="hidden" name="nCdCartao" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p class="original" data-nome-cartao></p>
+        <label><span>Apelido</span><input name="apelido" maxlength="80" autocomplete="off" /></label>
+        <div class="form-actions">
+            <button type="submit">@Textos.Salvar</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-excluir-cartao" class="janela">
+    <form method="post" asp-page-handler="ExcluirCartao">
+        <h2>Excluir cartão</h2>
+        <input type="hidden" name="nCdCartao" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p>Excluir <strong data-nome></strong>?</p>
+        <div class="form-actions">
+            <button type="submit" class="danger">@Textos.Excluir</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-gasto" class="janela">
+    <form method="post" asp-page-handler="IncluirGasto">
+        <h2>Incluir gasto</h2>
+        <input type="hidden" name="nCdCartao" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <label><span>Data da compra</span><input type="date" name="dataCompra" required /></label>
+        <label><span>Data da fatura</span><input type="date" name="dataFatura" required /></label>
+        <label><span>Descrição</span><input name="descricao" maxlength="160" required autocomplete="off" /></label>
+        <label>
+            <span>Categoria</span>
+            <select name="categoria">
+                @foreach (var categoria in Model.Categorias)
+                {
+                    <option>@categoria.sNmCategoria</option>
+                }
+            </select>
+        </label>
+        <label><span>Valor</span><input name="valor" inputmode="decimal" required autocomplete="off" /></label>
+        <p class="original">A parcela é a desta fatura. O total cria as parcelas seguintes, uma em cada mês.</p>
+        <label><span>Parcela desta fatura</span><input name="parcela" type="number" min="1" max="48" /></label>
+        <label><span>Total de parcelas</span><input name="totalParcelas" type="number" min="1" max="48" /></label>
+        <div class="form-actions">
+            <button type="submit">@Textos.Incluir</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-editar-gasto" class="janela">
+    <form method="post" asp-page-handler="SalvarGasto">
+        <h2>Editar gasto</h2>
+        <input type="hidden" name="nCdGasto" />
+        <input type="hidden" name="nCdCartao" value="@Model.CartaoAberto" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p class="original">Nome no cartão: <span data-descricao></span></p>
+        <label><span>Data da compra</span><input type="date" name="dataCompra" required /></label>
+        <label><span>Data da fatura</span><input type="date" name="dataFatura" required /></label>
+        <label><span>Apelido</span><input name="apelido" maxlength="160" autocomplete="off" /></label>
+        <label>
+            <span>Categoria</span>
+            <select name="categoria">
+                @foreach (var categoria in Model.Categorias)
+                {
+                    <option>@categoria.sNmCategoria</option>
+                }
+            </select>
+        </label>
+        <label><span>Valor</span><input name="valor" inputmode="decimal" required autocomplete="off" /></label>
+        <label><span>Parcela</span><input name="parcela" type="number" min="1" max="48" /></label>
+        <label><span>Total de parcelas</span><input name="totalParcelas" type="number" min="1" max="48" /></label>
+        <div class="form-actions">
+            <button type="submit" name="escopo" value="este">@Textos.Salvar</button>
+            <button type="submit" name="escopo" value="todos">Salvar para todos</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+        <p class="original">Salvar para todos aplica a data da compra, o apelido, a categoria e o valor nas outras faturas desta mesma compra. Parcela e data da fatura continuam as de cada mês.</p>
+    </form>
+</dialog>
+
+<dialog id="janela-fixar" class="janela">
+    <form method="post" asp-page-handler="MarcarContaFixa">
+        <h2>@Textos.MarcarContaFixa</h2>
+        <input type="hidden" name="nCdGasto" />
+        <input type="hidden" name="nCdCartao" value="@Model.CartaoAberto" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p class="original">O apelido e o valor estimado entram nos lançamentos futuros. O gasto continua nesta fatura.</p>
+        <label>
+            <span>Apelido</span>
+            <input name="apelido" maxlength="160" required autocomplete="off" />
+        </label>
+        <label>
+            <span>Valor estimado</span>
+            <input name="valorEstimado" inputmode="decimal" required autocomplete="off" />
+        </label>
+        <label>
+            <span>Quantidade de meses</span>
+            <input name="meses" type="number" min="1" max="60" value="24" required />
+        </label>
+        <label>
+            <span>Começar em</span>
+            <select name="inicio">
+                <option value="este" selected>Mês da fatura</option>
+                <option value="proximo">Próximo mês</option>
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit">@Textos.Salvar</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-desmarcar" class="janela">
+    <form method="post" asp-page-handler="DesmarcarContaFixa">
+        <h2>@Textos.DesmarcarContaFixa</h2>
+        <input type="hidden" name="nCdGasto" />
+        <input type="hidden" name="nCdCartao" value="@Model.CartaoAberto" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p>Desmarcar <strong data-desmarcar-nome></strong>? Os lançamentos futuros dessa conta fixa serão removidos. O gasto continua na fatura.</p>
+        <div class="form-actions">
+            <button type="submit">@Textos.DesmarcarContaFixa</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-excluir-gasto" class="janela">
+    <form method="post" asp-page-handler="ExcluirGasto">
+        <h2>Excluir gasto</h2>
+        <input type="hidden" name="nCdGasto" />
+        <input type="hidden" name="nCdCartao" value="@Model.CartaoAberto" />
+        <input type="hidden" name="ano" value="@Model.Ano" />
+        <input type="hidden" name="mes" value="@Model.Mes" />
+        <p>Excluir <strong data-nome></strong> desta fatura?</p>
+        <p class="original" data-excluir-fixa hidden>Se for conta fixa, os lançamentos futuros dela também serão removidos.</p>
+        <p class="original">Excluir tudo remove este gasto em todas as faturas restantes da mesma compra.</p>
+        <div class="form-actions">
+            <button type="submit" class="danger" name="escopo" value="um">@Textos.Excluir</button>
+            <button type="submit" class="danger" name="escopo" value="tudo">@Textos.ExcluirTudo</button>
+            <button type="button" class="ghost" data-fechar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script>
+        (() => {
+            const preencher = (formulario, campos) => {
+                Object.entries(campos).forEach(([nome, valor]) => {
+                    const campo = formulario.elements.namedItem(nome);
+                    if (campo) campo.value = valor ?? "";
+                });
+            };
+            document.querySelectorAll("dialog.janela").forEach((janela) => {
+                janela.addEventListener("cancel", (evento) => evento.preventDefault());
+                janela.querySelectorAll("[data-fechar]").forEach((botao) => {
+                    botao.addEventListener("click", () => janela.close());
+                });
+            });
+            document.querySelectorAll("[data-abrir]").forEach((botao) => {
+                botao.addEventListener("click", () => document.getElementById(botao.dataset.abrir)?.showModal());
+            });
+            const gasto = document.getElementById("janela-gasto");
+            document.querySelectorAll("[data-gasto]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    const formulario = gasto.querySelector("form");
+                    const hoje = new Date();
+                    const iso = hoje.toISOString().slice(0, 10);
+                    const dia = Number(botao.dataset.dia || hoje.getDate());
+                    const fatura = new Date(hoje.getFullYear(), hoje.getMonth(), Math.min(dia, 28));
+                    preencher(formulario, {
+                        nCdCartao: botao.dataset.id,
+                        dataCompra: iso,
+                        dataFatura: fatura.toISOString().slice(0, 10)
+                    });
+                    gasto.showModal();
+                });
+            });
+            const editarCartao = document.getElementById("janela-editar-cartao");
+            document.querySelectorAll("[data-editar-cartao]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    const formulario = editarCartao.querySelector("form");
+                    preencher(formulario, {
+                        nCdCartao: botao.dataset.id,
+                        apelido: botao.dataset.apelido,
+                        diaVencimento: botao.dataset.dia
+                    });
+                    editarCartao.querySelector("[data-nome-cartao]").textContent = botao.dataset.nome || "";
+                    editarCartao.showModal();
+                });
+            });
+            const excluirCartao = document.getElementById("janela-excluir-cartao");
+            document.querySelectorAll("[data-excluir-cartao]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(excluirCartao.querySelector("form"), { nCdCartao: botao.dataset.id });
+                    excluirCartao.querySelector("[data-nome]").textContent = botao.dataset.nome || "";
+                    excluirCartao.showModal();
+                });
+            });
+            const editarGasto = document.getElementById("janela-editar-gasto");
+            document.querySelectorAll("[data-editar-gasto]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    const formulario = editarGasto.querySelector("form");
+                    preencher(formulario, {
+                        nCdGasto: botao.dataset.id,
+                        dataCompra: botao.dataset.compra,
+                        dataFatura: botao.dataset.fatura,
+                        apelido: botao.dataset.apelido,
+                        categoria: botao.dataset.categoria,
+                        valor: botao.dataset.valor,
+                        parcela: botao.dataset.parcela,
+                        totalParcelas: botao.dataset.total
+                    });
+                    editarGasto.querySelector("[data-descricao]").textContent = botao.dataset.descricao || "";
+                    editarGasto.showModal();
+                });
+            });
+            const janelaFixar = document.getElementById("janela-fixar");
+            document.querySelectorAll("[data-fixar]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(janelaFixar.querySelector("form"), {
+                        nCdGasto: botao.dataset.id,
+                        apelido: botao.dataset.nome,
+                        valorEstimado: botao.dataset.valor,
+                        meses: "24",
+                        inicio: "este"
+                    });
+                    janelaFixar.showModal();
+                });
+            });
+            const janelaDesmarcar = document.getElementById("janela-desmarcar");
+            document.querySelectorAll("[data-desmarcar]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(janelaDesmarcar.querySelector("form"), { nCdGasto: botao.dataset.id });
+                    janelaDesmarcar.querySelector("[data-desmarcar-nome]").textContent = botao.dataset.nome || "";
+                    janelaDesmarcar.showModal();
+                });
+            });
+            const excluirGasto = document.getElementById("janela-excluir-gasto");
+            document.querySelectorAll("[data-excluir-gasto]").forEach((botao) => {
+                botao.addEventListener("click", () => {
+                    preencher(excluirGasto.querySelector("form"), { nCdGasto: botao.dataset.id });
+                    excluirGasto.querySelector("[data-nome]").textContent = botao.dataset.nome || "";
+                    const aviso = excluirGasto.querySelector("[data-excluir-fixa]");
+                    if (aviso) aviso.hidden = botao.dataset.fixa !== "true";
+                    excluirGasto.showModal();
+                });
+            });
+        })();
+    </script>
+}
