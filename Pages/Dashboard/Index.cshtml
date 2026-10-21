@@ -272,6 +272,18 @@
         (() => {
             const dados = @Html.Raw(Model.GraficoJson);
             const canvas = document.getElementById("grafico-mensal");
+            if (window.Chart) {
+                Chart.defaults.font.family = getComputedStyle(document.documentElement).getPropertyValue("--font-texto");
+                Chart.defaults.color = "#6e6886";
+                Chart.defaults.borderColor = "#e6e3f3";
+                Chart.defaults.plugins.tooltip.backgroundColor = "#1b1235";
+                Chart.defaults.plugins.tooltip.borderColor = "#1b1235";
+                Chart.defaults.plugins.tooltip.borderWidth = 1;
+                Chart.defaults.plugins.tooltip.titleColor = "#ffd23f";
+                Chart.defaults.plugins.tooltip.bodyColor = "#ffffff";
+                Chart.defaults.plugins.tooltip.padding = 10;
+                Chart.defaults.plugins.tooltip.cornerRadius = 10;
+            }
             if (canvas && window.Chart) {
                 new Chart(canvas, {
                     data: {
@@ -281,17 +293,29 @@
                                 type: "bar",
                                 label: "Gastos",
                                 data: dados.gastos,
-                                backgroundColor: "rgba(159, 18, 57, 0.65)",
-                                borderRadius: 6,
-                                order: 2
+                                backgroundColor: "#ff8a73",
+                                hoverBackgroundColor: "#ff6f55",
+                                borderRadius: 10,
+                                borderSkipped: "bottom",
+                                maxBarThickness: 40,
+                                order: 2,
+                                animation: {
+                                    delay:(contexto) => contexto.type === "data" ? contexto.dataIndex * 60 : 0
+                                }
                             },
                             {
                                 type: "line",
                                 label: "Entradas",
                                 data: dados.entradas,
-                                borderColor: "#047857",
-                                backgroundColor: "#047857",
-                                tension: 0.25,
+                                borderColor: "#5048e5",
+                                backgroundColor: "#5048e5",
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: "#ffffff",
+                                pointBorderColor: "#5048e5",
+                                pointBorderWidth: 2,
+                                tension: 0.3,
                                 order: 1
                             }
                         ]
@@ -318,6 +342,8 @@
                             },
                             y: {
                                 beginAtZero: true,
+                                border: { display: false },
+                                grid: { color: "#e6e3f3" },
                                 ticks: {
                                     callback(valor) {
                                         return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -333,7 +359,7 @@
             const rosca = document.getElementById("grafico-categorias");
             const roscaWrap = document.getElementById("rosca-wrap");
             const roscaVazio = document.getElementById("rosca-vazio");
-            const paleta = ["#9f1239", "#0f766e", "#c2410c", "#1d4ed8", "#a16207", "#6d28d9", "#047857", "#be123c", "#0369a1", "#b45309", "#4338ca", "#3f6212"];
+            const paleta = ["#5048e5", "#ffd23f", "#ff8a73", "#5ce0b3", "#c9b8ff", "#1b1235", "#8a84f0", "#ffb199", "#9fe9cf", "#ffe27a", "#e0d6ff", "#6e6886"];
             if (categorias.length === 0) {
                 if (roscaWrap) roscaWrap.hidden = true;
                 if (roscaVazio) roscaVazio.hidden = false;
@@ -345,16 +371,18 @@
                         datasets: [{
                             data: categorias.map((item) => item.valor),
                             backgroundColor: categorias.map((_, indice) => paleta[indice % paleta.length]),
-                            borderWidth: 2,
-                            borderColor: "#ffffff"
+                            borderWidth: 3,
+                            borderColor: "#f5f5fa",
+                            hoverOffset: 10
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: "62%",
+                        cutout: "70%",
+                        animation: { animateRotate: true, animateScale: true, duration: 1100, easing: "easeOutQuart" },
                         plugins: {
-                            legend: { position: "bottom", labels: { boxWidth: 12, padding: 12 } },
+                            legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, padding: 14 } },
                             tooltip: {
                                 callbacks: {
                                     label(contexto) {
