@@ -2,7 +2,10 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using CaioFinance.Data;
 using CaioFinance.Services;
+using CaioFinance.Services.Acesso;
 using CaioFinance.Services.Pluggy;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,8 +23,32 @@ if (string.IsNullOrWhiteSpace(conexao))
         "Exemplo: Host=db.SEU_PROJETO.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=SUA_SENHA;SSL Mode=Require;Trust Server Certificate=true");
 }
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(paginas =>
+{
+    paginas.Conventions.AuthorizeFolder("/");
+    paginas.Conventions.AllowAnonymousToPage("/Login/Index");
+    paginas.Conventions.AllowAnonymousToPage("/Error");
+});
+builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(cookies =>
+    {
+        cookies.LoginPath = "/login";
+        cookies.AccessDeniedPath = "/login";
+        cookies.ExpireTimeSpan = TimeSpan.FromDays(30);
+        cookies.SlidingExpiration = true;
+        cookies.Cookie.Name = "CaioFinance.Sessao";
+        cookies.Cookie.HttpOnly = true;
+        cookies.Cookie.SameSite = SameSiteMode.Lax;
+        // Em localhost (desenvolvimento) o acesso é http, então o cookie não pode exigir https.
+        // Hospedado (produção) o cookie só trafega por https.
+        cookies.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
+    });
 builder.Services.AddMemoryCache();
+builder.Services.Configure<OpcoesAcesso>(builder.Configuration.GetSection(OpcoesAcesso.Secao));
+builder.Services.AddSingleton<ServicoAcesso>();
 builder.Services.AddDbContext<CaioFinanceContexto>(opcoes => opcoes.UseNpgsql(conexao));
 builder.Services.Configure<OpcoesPluggy>(builder.Configuration.GetSection(OpcoesPluggy.Secao));
 builder.Services.AddHttpClient(ClientePluggy.NomeHttp, (provedor, cliente) =>
@@ -44,6 +71,15 @@ builder.Services.Configure<RequestLocalizationOptions>(opcoes =>
     opcoes.SupportedUICultures = [cultura];
 });
 
+// Hospedado atrás de um proxy (Render, Cloudflare, etc.), lê o esquema e o IP originais
+// dos cabeçalhos X-Forwarded-*, para o HTTPS e o bloqueio por IP funcionarem.
+builder.Services.Configure<ForwardedHeadersOptions>(opcoes =>
+{
+    opcoes.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    opcoes.KnownNetworks.Clear();
+    opcoes.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 if (!string.Equals(Environment.GetEnvironmentVariable("CAIOFINANCE_SEM_BANCO"), "1", StringComparison.Ordinal))
@@ -55,7 +91,12 @@ if (!string.Equals(Environment.GetEnvironmentVariable("CAIOFINANCE_SEM_BANCO"), 
 }
 
 if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders();
     app.UseExceptionHandler("/Error");
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
 
 app.Use(async (contexto, proximo) =>
 {
@@ -73,6 +114,7 @@ app.Use(async (contexto, proximo) =>
 });
 app.UseRequestLocalization();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();

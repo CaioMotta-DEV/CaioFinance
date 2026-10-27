@@ -22,7 +22,7 @@ Na primeira vez, se o banco estiver vazio, o programa cria categorias e alguns l
 - **Categorias.** Criar, renomear e excluir. Renomear vale para o extrato, para o cartão e para os lançamentos futuros. Excluir manda os lançamentos da categoria para Outros.
 - **Conexão.** Liga um banco pelo Meu Pluggy. A primeira leitura traz cerca de 12 meses. Atualizar, depois disso, traz o que a Pluggy registrou desde a última leitura. O saldo e os cartões dessa conexão entram junto.
 
-Não há tela de login. O endereço padrão é só o seu computador (`http://localhost:5080`). Não publique esse endereço na internet: quem abrir a página vê e altera os lançamentos.
+Antes de qualquer tela, o aplicativo pede usuário e senha. Esses dois valores ficam só na configuração local, na seção `Acesso`. A sessão dura 30 dias neste navegador. Sem essa senha, as páginas de gastos não abrem.
 
 ## Como o programa é feito
 
@@ -94,7 +94,7 @@ Na pasta do projeto já existe `appsettings.Development.example.json`.
 
 1. Duplique esse arquivo.
 2. Renomeie a cópia para `appsettings.Development.json`.
-3. Abra a cópia e substitua os textos de exemplo pela sua connection string, pelo Client ID e pelo Client Secret.
+3. Abra a cópia e substitua os textos de exemplo pela sua connection string, pelo Client ID, pelo Client Secret, pelo usuário e pela senha de acesso.
 4. Salve.
 
 Esse arquivo fica só no seu computador. O Git está configurado para não enviá-lo.
@@ -120,4 +120,4 @@ Para encerrar, volte ao terminal e pressione `Ctrl+C`.
 3. Use **Atualizar** quando quiser trazer saldo, extrato e cartões que a Pluggy já tiver recebido.
 4. Em **Lançamentos futuros**, use **Atualizar** para copiar os gastos de cartão já salvos para os meses das faturas.
 
-Os dados permanecem no seu projeto do Supabase. Outra pessoa só os vê se tiver a senha desse banco ou se você publicar o site na internet.
+Os dados permanecem no seu projeto do Supabase. Quem abrir o site vê a tela de entrada. Os gastos só aparecem depois do usuário e da senha da seção `Acesso`.

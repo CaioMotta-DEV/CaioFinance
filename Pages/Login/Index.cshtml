@@ -1,0 +1,27 @@
+@page "/login"
+@model CaioFinance.Pages.Login.IndexModel
+@{
+    ViewData["Title"] = "Entrar";
+    ViewData["SemMenu"] = true;
+}
+
+<section class="login-cartao">
+    <p class="eyebrow">Caio Finance</p>
+    <h1>Entrar</h1>
+    <p class="lede">Use o usuário e a senha definidos na sua configuração local.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Erro))
+    {
+        <p class="banner err" role="alert">@Model.Erro</p>
+    }
+    <form method="post">
+        <label>
+            <span>Usuário</span>
+            <input name="Usuario" value="@Model.Usuario" autocomplete="username" required maxlength="80" />
+        </label>
+        <label>
+            <span>Senha</span>
+            <input name="Senha" type="password" autocomplete="current-password" required maxlength="200" />
+        </label>
+        <button type="submit">Entrar</button>
+    </form>
+</section>

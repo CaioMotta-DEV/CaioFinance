@@ -12,8 +12,17 @@
 <body>
     @{
         var pagina = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+        var semMenu = ViewData["SemMenu"] as bool? == true;
         bool Ativa(string caminho) => pagina.Equals(caminho, StringComparison.OrdinalIgnoreCase);
     }
+    @if (semMenu)
+    {
+        <main class="login-pagina">
+            @RenderBody()
+        </main>
+    }
+    else
+    {
     <div class="app">
         <div class="backdrop" data-backdrop hidden></div>
         <aside id="sidebar" class="sidebar" data-sidebar>
@@ -28,6 +37,9 @@
                 <a class="@(Ativa("/Categorias/Index") ? "is-active" : null)" asp-page="/Categorias/Index" aria-current="@(Ativa("/Categorias/Index") ? "page" : null)">Categorias</a>
                 <a class="@(Ativa("/Conexao/Index") ? "is-active" : null)" asp-page="/Conexao/Index" aria-current="@(Ativa("/Conexao/Index") ? "page" : null)">Conexão</a>
             </nav>
+            <form class="sair" method="post" asp-page="/Sair/Index">
+                <button type="submit" class="ghost">Sair</button>
+            </form>
         </aside>
         <div class="content">
             <header class="topbar">
@@ -51,6 +63,7 @@
         </div>
     </div>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
